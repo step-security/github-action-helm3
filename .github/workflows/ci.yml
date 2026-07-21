@@ -45,8 +45,8 @@ jobs:
         runner: ${{ fromJson(needs.runner-matrix.outputs.runner) }}
         exec:
           - "helm version"
-          - "helm repo add WyriHaximusNet https://helm.wyrihaximus.net/"
-          - "helm repo add WyriHaximusNet https://helm.wyrihaximus.net/ && helm repo list"
+          - "helm repo add podinfo https://stefanprodan.github.io/podinfo"
+          - "helm repo add podinfo https://stefanprodan.github.io/podinfo && helm repo list"
           - "helm plugin install https://github.com/hypnoglow/helm-s3.git"
           - "helm plugin install https://github.com/hypnoglow/helm-s3.git && helm plugin list"
           - "helm env"
@@ -70,10 +70,10 @@ jobs:
       - uses: ./
         id: helm3
         with:
-          exec: helm repo add WyriHaximusNet https://helm.wyrihaximus.net/ && helm repo list
+          exec: helm repo add podinfo https://stefanprodan.github.io/podinfo && helm repo list
           kubeconfig: tada
       - run: |
-          php -r "exit(strpos('${HELM_OUTPUT}', 'WyriHaximusNet') !== false ? 0 : 255);"
+          php -r "exit(strpos('${HELM_OUTPUT}', 'podinfo') !== false ? 0 : 255);"
         env:
           HELM_OUTPUT: ${{ steps.helm3.outputs.helm_output }}
       - run: |
@@ -81,7 +81,7 @@ jobs:
         env:
           HELM_OUTPUT: ${{ steps.helm3.outputs.helm_output }}
       - run: |
-          php -r "exit(strpos('${HELM_OUTPUT}', 'https://helm.wyrihaximus.net/') !== false ? 0 : 255);"
+          php -r "exit(strpos('${HELM_OUTPUT}', 'https://stefanprodan.github.io/podinfo') !== false ? 0 : 255);"
         env:
           HELM_OUTPUT: ${{ steps.helm3.outputs.helm_output }}
   tests-helm-install-input:
@@ -122,19 +122,19 @@ jobs:
         id: helmlistcountfirst
         with:
           exec: |
-            printf "count=%s\n" $(helm list | grep ducker-hub-exporter | wc -l) >> $GITHUB_OUTPUT
+            printf "count=%s\n" $(helm list | grep podinfo | wc -l) >> $GITHUB_OUTPUT
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - run: |
           php -r "exit(trim('${COUNT}') === '0' ? 0 : 255);"
         env:
           COUNT: ${{ steps.helmlistcountfirst.outputs.count }}
-      - name: Install ducker-hub-exporter
+      - name: Install podinfo
         uses: ./
         id: helm3
         with:
           exec: |
-            helm repo add WyriHaximusNet https://helm.wyrihaximus.net/
-            helm install ducker-hub-exporter WyriHaximusNet/docker-hub-exporter --atomic
+            helm repo add podinfo https://stefanprodan.github.io/podinfo
+            helm install podinfo podinfo/podinfo --atomic
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - name: List installed packages
         uses: ./
@@ -148,17 +148,17 @@ jobs:
         with:
           exec: |
             helm list
-            printf "::set-output name=count::%s" $(helm list | grep ducker-hub-exporter | wc -l)
+            printf "::set-output name=count::%s" $(helm list | grep podinfo | wc -l)
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - run: |
           php -r "exit(trim('${COUNT}') === '1' ? 0 : 255);"
         env:
           COUNT: ${{ steps.helmlistcountseccond.outputs.count }}
-      - name: UnInstall ducker-hub-exporter
+      - name: UnInstall podinfo
         uses: ./
         with:
           exec: |
-            helm uninstall ducker-hub-exporter
+            helm uninstall podinfo
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - name: List installed packages
         uses: ./
@@ -166,7 +166,7 @@ jobs:
         with:
           exec: |
             helm list
-            printf "::set-output name=count::%s" $(helm list | grep ducker-hub-exporter | wc -l)
+            printf "::set-output name=count::%s" $(helm list | grep podinfo | wc -l)
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - run: |
           php -r "exit(trim('${COUNT}') === '0' ? 0 : 255);"
@@ -210,19 +210,19 @@ jobs:
         id: helmlistcountfirst
         with:
           exec: |
-            printf "count=%s\n" $(helm list | grep ducker-hub-exporter | wc -l) >> $GITHUB_OUTPUT
+            printf "count=%s\n" $(helm list | grep podinfo | wc -l) >> $GITHUB_OUTPUT
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - run: |
           php -r "exit(trim('${COUNT}') === '0' ? 0 : 255);"
         env:
           COUNT: ${{ steps.helmlistcountfirst.outputs.count }}
-      - name: Install ducker-hub-exporter
+      - name: Install podinfo
         uses: ./
         id: helm3
         with:
           exec: |
-            helm repo add WyriHaximusNet https://helm.wyrihaximus.net/
-            helm install ducker-hub-exporter WyriHaximusNet/docker-hub-exporter --atomic
+            helm repo add podinfo https://stefanprodan.github.io/podinfo
+            helm install podinfo podinfo/podinfo --atomic
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - name: List installed packages
         uses: ./
@@ -253,7 +253,7 @@ jobs:
         with:
           exec: |
             helm list
-            printf "::set-output name=count::%s" $(helm list | grep ducker-hub-exporter | wc -l)
+            printf "::set-output name=count::%s" $(helm list | grep podinfo | wc -l)
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
           overrule_existing_kubeconfig: "true"
       - run: |
@@ -262,11 +262,11 @@ jobs:
           COUNT: ${{ steps.helmlistcountoverruledkubeconfig.outputs.count }}
       - run: |
           rm ~/.kube -Rf
-      - name: UnInstall ducker-hub-exporter
+      - name: UnInstall podinfo
         uses: ./
         with:
           exec: |
-            helm uninstall ducker-hub-exporter
+            helm uninstall podinfo
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - name: List installed packages
         uses: ./
@@ -274,7 +274,7 @@ jobs:
         with:
           exec: |
             helm list
-            printf "::set-output name=count::%s" $(helm list | grep ducker-hub-exporter | wc -l)
+            printf "::set-output name=count::%s" $(helm list | grep podinfo | wc -l)
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - run: |
           php -r "exit(trim('${COUNT}') === '0' ? 0 : 255);"
@@ -310,18 +310,18 @@ jobs:
         id: helmlistcountfirst
         with:
           exec: |
-            helm list | grep ducker-hub-exporter | wc -l
+            helm list | grep podinfo | wc -l
       - run: |
           php -r "exit(trim('${COUNT}') === '0' ? 0 : 255);"
         env:
           COUNT: ${{ steps.helmlistcountfirst.outputs.helm_output }}
-      - name: Install ducker-hub-exporter
+      - name: Install podinfo
         uses: ./
         id: helm3
         with:
           exec: |
-            helm repo add WyriHaximusNet https://helm.wyrihaximus.net/
-            helm install ducker-hub-exporter WyriHaximusNet/docker-hub-exporter --atomic
+            helm repo add podinfo https://stefanprodan.github.io/podinfo
+            helm install podinfo podinfo/podinfo --atomic
       - name: List installed packages
         uses: ./
         with:
@@ -332,22 +332,22 @@ jobs:
         id: helmlistcountseccond
         with:
           exec: |
-            helm list | grep ducker-hub-exporter | wc -l
+            helm list | grep podinfo | wc -l
       - run: |
           php -r "exit(trim('${COUNT}') === '1' ? 0 : 255);"
         env:
           COUNT: ${{ steps.helmlistcountseccond.outputs.helm_output }}
-      - name: UnInstall ducker-hub-exporter
+      - name: UnInstall podinfo
         uses: ./
         with:
           exec: |
-            helm uninstall ducker-hub-exporter
+            helm uninstall podinfo
       - name: List installed packages
         uses: ./
         id: helmlistcountthird
         with:
           exec: |
-            helm list | grep ducker-hub-exporter | wc -l
+            helm list | grep podinfo | wc -l
       - run: |
           php -r "exit(trim('${COUNT}') === '0' ? 0 : 255);"
         env:

@@ -43,7 +43,7 @@ async function main() {
     const {randomUUID} = require('crypto');
     const homedir = require('os').homedir();
     const tempdir = require('os').tmpdir();
-    const {execFile} = require('child_process');
+    const {spawn} = require('child_process');
     const tmp = require('tmp');
     const {waitFile} = require('wait-file');
 
@@ -118,7 +118,17 @@ async function main() {
         '    ' + dockerKubeConfigDir + '/helm "$@"\n' +
         '}\n' +
         ' \n' +
-        'curl -s -o ' + dockerKubeConfigDir + ' "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl" 2>&1\n' +
+        'KUBECTL_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)"\n' +
+        'KUBECTL_ARCH="$(dpkg --print-architecture)"\n' +
+        'curl -fsSL -o ' + dockerKubeConfigDir + '/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl"\n' +
+        'curl -fsSL -o ' + dockerKubeConfigDir + '/kubectl.sha256 "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl.sha256"\n' +
+        'if echo "$(cat ' + dockerKubeConfigDir + '/kubectl.sha256)  ' + dockerKubeConfigDir + '/kubectl" | sha256sum --check --status; then\n' +
+        '    printf "\\033[32m  - kubectl checksum verification passed ✅\\033[0m\\n" >&3\n' +
+        'else\n' +
+        '    printf "\\033[31mERROR: kubectl checksum verification failed\\033[0m\\n" >&3\n' +
+        '    exit 1\n' +
+        'fi\n' +
+        'chmod +x ' + dockerKubeConfigDir + '/kubectl\n' +
         'curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > /dev/null 2>&1\n' +
         'chmod 700 get_helm.sh > /dev/null 2>&1\n' +
         'DESIRED_VERSION="' + (process.env.INPUT_HELM_VERSION || '') + '" HELM_INSTALL_DIR=' + dockerKubeConfigDir + ' ./get_helm.sh > /dev/null 2>&1\n' +
@@ -137,13 +147,23 @@ async function main() {
     try {
         console.log("\033[36mExecuting helm\033[0m");
         const result = await new Promise((resolve, reject) => {
-            const process = execFile(execShFile.name);
-            process.stdout.on('data', console.log);
-            process.stderr.on('data', console.log);
+            // fd 3 carries setup/status messages (e.g. kubectl checksum verification)
+            // so they show in the action log without polluting helm_output.
+            const child = spawn(execShFile.name, [], {
+                stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
+            });
+            child.stdout.setEncoding('utf8');
+            child.stderr.setEncoding('utf8');
+            child.stdout.on('data', console.log);
+            child.stderr.on('data', console.log);
+            if (child.stdio[3]) {
+                child.stdio[3].setEncoding('utf8');
+                child.stdio[3].on('data', (data) => console.log(data));
+            }
             let result = '';
-            process.stdout.on('data', (data) => result += data);
-            process.stderr.on('data', (data) => result += data);
-            process.on('exit', (code) => {
+            child.stdout.on('data', (data) => result += data);
+            child.stderr.on('data', (data) => result += data);
+            child.on('exit', (code) => {
                 if (code === 0) {
                     resolve(result);
                 } else {
