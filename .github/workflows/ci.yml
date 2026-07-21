@@ -20,11 +20,11 @@ jobs:
           if [ "${{ github.event_name }}" == "pull_request" ] ; then
             ref=$(php -r "echo str_replace('/', '-SLASH-', '${{ github.event.pull_request.head.ref }}');")
             echo "$ref"
-            printf "::set-output name=ref::%s" $ref
+            echo "ref=$ref" >> $GITHUB_OUTPUT
             exit 0
           fi
           echo "${GITHUB_REF##*/}"
-          echo "::set-output name=ref::${GITHUB_REF##*/}"
+          echo "ref=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
   runner-matrix:
     name: Runner Matrix
     runs-on: ubuntu-latest
@@ -34,7 +34,7 @@ jobs:
       - id: runner-matrix
         name: Runner Matrix
         run: |
-          echo "::set-output name=runner::[\"ubuntu-latest\"]"
+          echo 'runner=["ubuntu-latest"]' >> $GITHUB_OUTPUT
   tests-helm-works:
     name: "Testing Helm Command: ${{ matrix.exec }} on ${{ matrix.runner }}"
     runs-on: ${{ matrix.runner }}
@@ -98,12 +98,12 @@ jobs:
         uses: helm/kind-action@v1
       - name: Get running image ID
         id: ps
-        run: printf "::set-output name=id::%s" $(docker ps --format "{{.ID}}")
+        run: echo "id=$(docker ps --format '{{.ID}}')" >> $GITHUB_OUTPUT
         env:
           IMAGE: ${{ steps.build.outputs.tag }}
       - name: Get running image IP
         id: inspect
-        run: printf "::set-output name=ip::%s" $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${IMAGE_ID})
+        run: echo "ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${IMAGE_ID})" >> $GITHUB_OUTPUT
         env:
           IMAGE_ID: ${{ steps.ps.outputs.id }}
       - run: sed -i "s/127.0.0.1:32768/${KIND_IP}:6443/g" ~/.kube/config
@@ -115,7 +115,7 @@ jobs:
           kubeconfig="${kubeconfig//'%'/'%25'}"
           kubeconfig="${kubeconfig//$'\n'/'%0A'}"
           kubeconfig="${kubeconfig//$'\r'/'%0D'}"
-          echo "::set-output name=kubeconfig::$kubeconfig"
+          echo "kubeconfig=$kubeconfig" >> $GITHUB_OUTPUT
         id: kubeconfig
       - name: List installed packages
         uses: ./
@@ -148,7 +148,7 @@ jobs:
         with:
           exec: |
             helm list
-            printf "::set-output name=count::%s" $(helm list | grep podinfo | wc -l)
+            printf "count=%s\n" $(helm list | grep podinfo | wc -l) >> $GITHUB_OUTPUT
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - run: |
           php -r "exit(trim('${COUNT}') === '1' ? 0 : 255);"
@@ -166,7 +166,7 @@ jobs:
         with:
           exec: |
             helm list
-            printf "::set-output name=count::%s" $(helm list | grep podinfo | wc -l)
+            printf "count=%s\n" $(helm list | grep podinfo | wc -l) >> $GITHUB_OUTPUT
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - run: |
           php -r "exit(trim('${COUNT}') === '0' ? 0 : 255);"
@@ -186,12 +186,12 @@ jobs:
         uses: helm/kind-action@v1
       - name: Get running image ID
         id: ps
-        run: printf "::set-output name=id::%s" $(docker ps --format "{{.ID}}")
+        run: echo "id=$(docker ps --format '{{.ID}}')" >> $GITHUB_OUTPUT
         env:
           IMAGE: ${{ steps.build.outputs.tag }}
       - name: Get running image IP
         id: inspect
-        run: printf "::set-output name=ip::%s" $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${IMAGE_ID})
+        run: echo "ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${IMAGE_ID})" >> $GITHUB_OUTPUT
         env:
           IMAGE_ID: ${{ steps.ps.outputs.id }}
       - run: sed -i "s/127.0.0.1:32768/${KIND_IP}:6443/g" ~/.kube/config
@@ -203,7 +203,7 @@ jobs:
           kubeconfig="${kubeconfig//'%'/'%25'}"
           kubeconfig="${kubeconfig//$'\n'/'%0A'}"
           kubeconfig="${kubeconfig//$'\r'/'%0D'}"
-          echo "::set-output name=kubeconfig::$kubeconfig"
+          echo "kubeconfig=$kubeconfig" >> $GITHUB_OUTPUT
         id: kubeconfig
       - name: List installed packages
         uses: ./
@@ -240,7 +240,7 @@ jobs:
         with:
           exec: |
             helm list
-            printf "::set-output name=cnt::%s" $(cat ~/.kube/config)
+            printf "cnt=%s\n" $(cat ~/.kube/config) >> $GITHUB_OUTPUT
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - name: "Assert kubeconfig really contains: junk"
         uses: nick-fields/assert-action@v4
@@ -253,7 +253,7 @@ jobs:
         with:
           exec: |
             helm list
-            printf "::set-output name=count::%s" $(helm list | grep podinfo | wc -l)
+            printf "count=%s\n" $(helm list | grep podinfo | wc -l) >> $GITHUB_OUTPUT
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
           overrule_existing_kubeconfig: "true"
       - run: |
@@ -274,7 +274,7 @@ jobs:
         with:
           exec: |
             helm list
-            printf "::set-output name=count::%s" $(helm list | grep podinfo | wc -l)
+            printf "count=%s\n" $(helm list | grep podinfo | wc -l) >> $GITHUB_OUTPUT
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig }}
       - run: |
           php -r "exit(trim('${COUNT}') === '0' ? 0 : 255);"
@@ -294,12 +294,12 @@ jobs:
         uses: helm/kind-action@v1
       - name: Get running image ID
         id: ps
-        run: printf "::set-output name=id::%s" $(docker ps --format "{{.ID}}")
+        run: echo "id=$(docker ps --format '{{.ID}}')" >> $GITHUB_OUTPUT
         env:
           IMAGE: ${{ steps.build.outputs.tag }}
       - name: Get running image IP
         id: inspect
-        run: printf "::set-output name=ip::%s" $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${IMAGE_ID})
+        run: echo "ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${IMAGE_ID})" >> $GITHUB_OUTPUT
         env:
           IMAGE_ID: ${{ steps.ps.outputs.id }}
       - run: sed -i "s/127.0.0.1:32768/${KIND_IP}:6443/g" ~/.kube/config
