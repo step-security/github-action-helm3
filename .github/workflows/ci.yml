@@ -110,13 +110,11 @@ jobs:
         env:
           KIND_IP: ${{ steps.inspect.outputs.ip }}
       - name: Make kubeconfig available to Helm3 action
-        run: |
-          kubeconfig=$(cat ~/.kube/config)
-          kubeconfig="${kubeconfig//'%'/'%25'}"
-          kubeconfig="${kubeconfig//$'\n'/'%0A'}"
-          kubeconfig="${kubeconfig//$'\r'/'%0D'}"
-          echo "kubeconfig=$kubeconfig" >> $GITHUB_OUTPUT
         id: kubeconfig
+        run: |
+          echo "kubeconfig<<KUBECONFIG_EOF" >> $GITHUB_OUTPUT
+          cat ~/.kube/config >> $GITHUB_OUTPUT
+          echo "KUBECONFIG_EOF" >> $GITHUB_OUTPUT
       - name: List installed packages
         uses: ./
         id: helmlistcountfirst
@@ -198,13 +196,11 @@ jobs:
         env:
           KIND_IP: ${{ steps.inspect.outputs.ip }}
       - name: Make kubeconfig available to Helm3 action
-        run: |
-          kubeconfig=$(cat ~/.kube/config)
-          kubeconfig="${kubeconfig//'%'/'%25'}"
-          kubeconfig="${kubeconfig//$'\n'/'%0A'}"
-          kubeconfig="${kubeconfig//$'\r'/'%0D'}"
-          echo "kubeconfig=$kubeconfig" >> $GITHUB_OUTPUT
         id: kubeconfig
+        run: |
+          echo "kubeconfig<<KUBECONFIG_EOF" >> $GITHUB_OUTPUT
+          cat ~/.kube/config >> $GITHUB_OUTPUT
+          echo "KUBECONFIG_EOF" >> $GITHUB_OUTPUT
       - name: List installed packages
         uses: ./
         id: helmlistcountfirst
